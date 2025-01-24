@@ -435,7 +435,7 @@ def Mutiagent_collect_experiences_q(env,
             truncated=0
             state_ini_flag=True
         else:
-            next_obs, reward, terminated, truncated, _ = env.step(action.cpu().numpy())
+            next_obs, reward, terminated, truncated, _ = env.step(int(action.cpu().numpy()))
         # print("reward", reward)
         # print("terminated", terminated)
         # print("truncated", truncated)

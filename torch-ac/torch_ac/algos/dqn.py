@@ -52,7 +52,7 @@ class ReplayBuffer:
         transitions = [self.buffer[idx] for idx in indices]
         
         states_obs = [trans.state.image for trans in transitions]
-        states_text = [trans.state.text for trans in transitions]
+        # states_text = [trans.state.text for trans in transitions]
         actions = [trans.action for trans in transitions]
         rewards = [trans.reward for trans in transitions]
         next_states_obs = [trans.state_.image for trans in transitions]
@@ -60,15 +60,17 @@ class ReplayBuffer:
         dones = [trans.done for trans in transitions]
 
         state_obs_tensor = torch.stack(states_obs)
-        state_text_tensor = torch.stack(states_text)
-        state = DictList({"image": state_obs_tensor,
-                          "text": state_text_tensor})
+        # state_text_tensor = torch.stack(states_text)
+        # state = DictList({"image": state_obs_tensor,
+                        #   "text": state_text_tensor})
+        state = DictList({"image": state_obs_tensor})
         action_tensor = torch.stack(actions)
         reward_tensor = torch.stack(rewards)
         next_state_obs_tensor = torch.stack(next_states_obs)
-        next_state_text_tensor = torch.stack(next_states_text)
-        next_state = DictList({"image": next_state_obs_tensor,
-                               "text": next_state_text_tensor})
+        next_state = DictList({"image": next_state_obs_tensor})
+        # next_state_text_tensor = torch.stack(next_states_text)
+        # next_state = DictList({"image": next_state_obs_tensor,
+                            #    "text": next_state_text_tensor})
         done_tensor = torch.stack(dones)
 
         return state, action_tensor, reward_tensor, next_state, done_tensor, weights, indices
@@ -119,12 +121,14 @@ class DQNAlgo(BaseAlgo):
 
     def optimize_model(self, s, a, r, s_, weights, indices):
         state_batch = s
-        action_batch = a
+        # action_batch = a
+        action_batch = a.clone().detach().to(device=self.device, dtype=torch.int64)
+        action_batch = action_batch.unsqueeze(1)
         reward_batch = r
         next_states_batch = s_
 
-        action_batch = torch.tensor(action_batch, device=self.device, dtype=torch.int64)
-        action_batch = action_batch.unsqueeze(1)
+        # action_batch = torch.tensor(action_batch, device=self.device, dtype=torch.int64)
+        # action_batch = action_batch.unsqueeze(1)
         
         # 当前Q值
         state_action_values = self.acmodel(state_batch).gather(1, action_batch)

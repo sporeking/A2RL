@@ -36,3 +36,9 @@ A2RL with PPO on Taxi:
 cd scripts
 bash ./A2RL_PPO_taxi.sh
 ```
+
+## Referenced Projects
+
+This project references the following open-source projects:
+
+- [TORCH-AC](https://github.com/lcswillems/torch-ac) - Recurrent and multi-process PyTorch implementation of deep reinforcement Actor-Critic algorithms A2C and PPO.

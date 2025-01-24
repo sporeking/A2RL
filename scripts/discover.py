@@ -594,7 +594,7 @@ def main():
                                                             device=device,
                                                             start_node=start_node,
                                                             anomaly_detector=anomaly_detector,
-                                                            num_frames_per_proc=args.frames_per_proc * agent_num,
+                                                            num_frames_per_proc=args.frames_per_proc,
                                                             preprocess_obss=preprocess_obss,
                                                             epsilon=epsilon,
                                                             discover=args.discover)
