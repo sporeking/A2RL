@@ -1,0 +1,8 @@
+pyyaml
+gymnasium
+tensorboardX
+torchvision
+scikit-learn
+scikit-image
+opencv-python
+matplotlib

@@ -1,0 +1,22 @@
+agent_num: 3
+graph:
+  edges:
+  - from: 2
+    id: 0
+    to: 1
+    with_agent: 1
+  - from: 2
+    id: 1
+    to: 0
+    with_agent: 0
+  - from: 3
+    to: 2
+  - from: 4
+    to: 3
+  nodes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  start_node: 4
