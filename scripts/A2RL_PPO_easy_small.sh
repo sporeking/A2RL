@@ -3,7 +3,7 @@
 NUMS=10
 DEVICE_ID=0 
 DELETE_OLD_MODELS=0 
-BASE_MODEL_NAME="test_A2RL_easy_small" 
+BASE_MODEL_NAME="test_A2RL_easy_small_111" 
 CONFIGMAP="easy_small_maps.config" 
 ENV="MiniGrid-ConfigWorld-v0" 
 # PYTHON=/home/sporeking/miniconda3/envs/py312/bin/python
@@ -16,9 +16,12 @@ DISCOVER_STEPS=100000
 # init config.
 START_CONFIG_CONTENT="graph:  
   nodes:
-    - 0
-    - 1
-    - 2
+    - id: 0
+      next: 0
+    - id: 1
+      next: 1
+    - id: 2
+      next: 1
   # 0 == die, 1 == reward. 
   edges:
     - from: 2

@@ -6,23 +6,23 @@ import time
 import copy
 import datetime
 import torch_ac
-import tensorboardX
-from torchvision import transforms
+# import tensorboardX
+# from torchvision import transforms
 import sys
 import networkx as nx
 import heapq
-from sklearn.metrics.pairwise import cosine_similarity
-from skimage.metrics import structural_similarity as ssim
+# from sklearn.metrics.pairwise import cosine_similarity
+# from skimage.metrics import structural_similarity as ssim
 
 import utils
 from utils import *
 from utils import device
-from utils.process import contrast_ssim, contrast_hist
+from utils.process import contrast_ssim
 from model import ACModel, CNN, QNet
 
 from graph_test import test, ddm_decision
 from utils.anomaly import BoundaryDetector, BoundaryDetectorSSIM, ClusterAnomalyDetector
-import math
+# import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--task-config", required=True,
@@ -102,10 +102,12 @@ class stateNode():
                  id,
                  mutation = None,
                  agent: ACModel = None,
-                 env_image = None):
+                 env_image = None,
+                 next_state = None):
         self.id = id
         self.mutation = mutation
         self.agent = agent
+        self.next_state = next_state
         self.env_image = env_image
 
 # need to get parameters to get the graph
@@ -297,10 +299,10 @@ def main():
     with open(task_config_path, "r") as file:
         task_config = yaml.safe_load(file)
     # get the graph structure
-    for node_id in task_config['graph']['nodes']:
-        G.add_node(node_id, state=stateNode(node_id, agent=None, mutation=None))
+    for node in task_config['graph']['nodes']:
+        G.add_node(node["id"], state=stateNode(node["id"], agent=None, mutation=None, next_state=node["next"]))
     for edge in task_config['graph']['edges']:
-        G.add_edge(edge["from"], edge["to"])
+        G.add_edge(edge["from"], edge["to"], agent=None, mutation=None)
     start_node = task_config['graph']['start_node']
     date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
     default_model_name = f"{args.env}_{args.algo}_seed{args.seed}_{date}"
@@ -409,7 +411,11 @@ def main():
         txt_logger.info("Optimizer loaded\n")
         algos.append(algo)
         print("G.nodes[i + 2]", G.nodes[i + 2])
-        G.nodes[i + 2]['state'].agent = algo
+        # G.nodes[i + 2]['state'].agent = algo
+        G.edges[task_config["graph"]["edges"][i]["from"], task_config["graph"]["edges"][i]["to"]]['agent'] = algo
+
+    for i in range(agent_num):
+        G.nodes[i + 2]['state'].agent = G.edges[i + 2, G.nodes[i + 2]['state'].next_state]['agent']
 
     if initial_agent_num > 0:
         for i in range(2, initial_agent_num + 2):
@@ -515,9 +521,11 @@ def main():
             new_node_id = len(G.nodes)
             new_obs = stop_env.gen_obs()
             new_obs = new_obs['image'] if isinstance(new_obs, dict) else new_obs
-            G.add_node(new_node_id, state=stateNode(new_node_id, None, None, new_obs))
-            if min_stop_state == start_node:
-                G.add_edge(new_node_id, start_node)
+            G.add_node(new_node_id, state=stateNode(new_node_id, None, None, new_obs, out_state))
+            add_start = min_stop_state == start_node
+            if add_start:
+                G.add_edge(new_node_id, start_node, agent=algo)
+                G.nodes[new_node_id]['state'].agent = G.edges[new_node_id, start_node]['agent']
                 G.nodes[start_node]['state'].mutation = new_mutation
                 plt.imsave(state_img_path + "state{}.bmp".format(new_node_id), initial_img)
                 start_node = new_node_id
@@ -525,21 +533,25 @@ def main():
             else:
                 plt.imsave(state_img_path + "state{}.bmp".format(new_node_id), new_state_img)
                 G.nodes[new_node_id]['state'].mutation = new_mutation
-                G.add_edge(stop_state, new_node_id)
-                G.add_edge(new_node_id, out_state)
+                G.add_edge(stop_state, new_node_id, agent=algo)
+                G.nodes[stop_state]['state'].agent = G.edges[stop_state, new_node_id]['agent']
+                G.nodes[stop_state]['state'].next_state = new_node_id
+                G.add_edge(new_node_id, out_state, agent=copy.deepcopy(algo))
+                G.nodes[new_node_id]['state'].agent = G.edges[new_node_id, out_state]['agent']
+                G.nodes[new_node_id]['state'].next_state = out_state
                 raise NotImplementedError
 
             acmodels.append(new_acmodel)
-            G.nodes[new_node_id]['state'].agent = algo
+            # G.nodes[new_node_id]['state'].agent = algo
             algos.append(algo)
             agent_num += 1
             # save the new graph
             new_yaml = task_config
-            new_yaml['graph']['nodes'].append(new_node_id)
+            new_yaml['graph']['nodes'].append({"id": new_node_id, "next": out_state})
             new_yaml['graph']['start_node'] = start_node
             new_yaml['agent_num'] = agent_num
             for successor in G.successors(new_node_id):
-                new_yaml['graph']['edges'].append({"from": new_node_id, "to": successor})
+                new_yaml['graph']['edges'].append({"from": new_node_id, "to": successor, "id": agent_num})
             for predecessor in G.predecessors(new_node_id):
                 new_yaml['graph']['edges'].append({"from": predecessor, "to": new_node_id})
             with open(new_task_path + '/config.yaml', 'w') as file:
