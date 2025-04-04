@@ -521,33 +521,41 @@ def main():
             new_node_id = len(G.nodes)
             new_obs = stop_env.gen_obs()
             new_obs = new_obs['image'] if isinstance(new_obs, dict) else new_obs
-            G.add_node(new_node_id, state=stateNode(new_node_id, None, None, new_obs, out_state))
+            G.add_node(new_node_id, state=stateNode(new_node_id, None, None, new_obs, None))
             add_start = min_stop_state == start_node
             if add_start:
                 G.add_edge(new_node_id, start_node, agent=algo)
                 G.nodes[new_node_id]['state'].agent = G.edges[new_node_id, start_node]['agent']
+                G.nodes[new_node_id]['state'].next_state = start_node
                 G.nodes[start_node]['state'].mutation = new_mutation
                 plt.imsave(state_img_path + "state{}.bmp".format(new_node_id), initial_img)
                 start_node = new_node_id
                 print("New start node: ", start_node)
+                acmodels.append(new_acmodel)
+                algos.append(algo)
             else:
                 plt.imsave(state_img_path + "state{}.bmp".format(new_node_id), new_state_img)
                 G.nodes[new_node_id]['state'].mutation = new_mutation
                 G.add_edge(stop_state, new_node_id, agent=algo)
                 G.nodes[stop_state]['state'].agent = G.edges[stop_state, new_node_id]['agent']
                 G.nodes[stop_state]['state'].next_state = new_node_id
-                G.add_edge(new_node_id, out_state, agent=copy.deepcopy(algo))
+                acmodels.append(new_acmodel)
+                algos.append(algo)
+
+                new_acmodel_copy = copy.deepcopy(new_acmodel)
+                new_acmodel_copy.load_state_dict(new_acmodel.state_dict())
+                algo_copy = copy.deepcopy(algo)
+                algo_copy.acmodel = new_acmodel_copy
+                
+                G.add_edge(new_node_id, out_state, agent=algo_copy)
                 G.nodes[new_node_id]['state'].agent = G.edges[new_node_id, out_state]['agent']
                 G.nodes[new_node_id]['state'].next_state = out_state
-                raise NotImplementedError
 
-            acmodels.append(new_acmodel)
             # G.nodes[new_node_id]['state'].agent = algo
-            algos.append(algo)
             agent_num += 1
             # save the new graph
             new_yaml = task_config
-            new_yaml['graph']['nodes'].append({"id": new_node_id, "next": out_state})
+            new_yaml['graph']['nodes'].append({"id": new_node_id, "next": G.nodes[new_node_id]['state'].next_state})
             new_yaml['graph']['start_node'] = start_node
             new_yaml['agent_num'] = agent_num
             for successor in G.successors(new_node_id):
