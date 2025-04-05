@@ -14,21 +14,20 @@ DISCOVER_STEPS=100000
 CONTRAST_FUNC="SSIM"
 ###################################
 
-START_CONFIG_CONTENT="graph:
+START_CONFIG_CONTENT="graph:  
   nodes:
-    - 0
-    - 1
-    - 2
-  # 0 == die, 1 == reward.
+    - id: 0
+      next: 0
+    - id: 1
+      next: 1
+    - id: 2
+      next: 1
+  # 0 == die, 1 == reward. 
   edges:
     - from: 2
       to: 1
       id: 0
       with_agent: 1
-    - from: 2
-      to: 0
-      id: 1
-      with_agent: 0
   start_node: 2
 agent_num: 1"
 

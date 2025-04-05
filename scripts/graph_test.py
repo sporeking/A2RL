@@ -69,7 +69,7 @@ def test_once(
             is_anomaly = False
             for node_num, node_mutation in mutation_buffer:
                 if anomaly_detector.contrast(node_mutation, mutation_roi, return_bool=True):
-                    print(f"turn to state {node_num}")
+                    # print(f"turn to state {node_num}")
                     current_state = node_num
                     # print(current_state)
                     # plt.imshow(mutation)
