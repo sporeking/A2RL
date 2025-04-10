@@ -37,6 +37,11 @@ cd scripts
 bash ./A2RL_PPO_taxi.sh
 ```
 
+## Some details
+
+The model and training data is in `scripts/storage` folder.  
+The config files (containing the structure of initial state machine and discovered state machine) are in `scripts/config` folder. You can find the symbols (mutations) in the folder. 
+
 ## Referenced Projects
 
 This project references the following open-source projects:
